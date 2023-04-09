@@ -55,14 +55,14 @@ def get_top_readers(studentsNum):
 def welcome_message():
     print("\n** Thank you for using the student's pages read tracker! **")
     print("** Need more function please contact Kenshing Teoh! **\n")
-    print("\n** This program will ask for students name (Please keep the student's name format consistent).**")
-    print("** For example: Lastname Firstname or Lastname, Firstname. As long as all the name are in the same format.")
-    print("** And you will enter the file name that you want to save the data in.**\n")
+    print("** The Program will ask you to enter the file name that you want to save or read the data from.**\n")
+    print("\n** And then students name (Please keep the student's name format consistent).**")
+    print("** For example: 'Lastname Firstname' or 'Lastname, Firstname'. As long as all the name are in the same "
+          "format style.")
 
 
 def main():
     welcome_message()
-
     # Prompt user for CSV file name
     fileName = input("Enter Excel file name: ")
     # Check if the file has .csv extension
@@ -74,10 +74,10 @@ def main():
 
     # Loop the program
     while True:
-        name = input("\nEnter student name (or 'exit' to save and quit): ")
+        name = input("\nEnter student name (or 'exit' to save the data): ")
         if name.lower() == 'exit':
             save_data(fileName)
-            print(f"Student data saved to {fileName}")
+            print(f"Data saved to {fileName}")
             break
         while True:
             pages_input = input("Enter pages read: ")
@@ -85,19 +85,23 @@ def main():
                 pages = int(pages_input)
                 break
             except ValueError:
-                print("Invalid input: pages read must be an integer")
+                print("** Invalid input: pages read must be an integer **\n")
         add_student(name, pages)
 
     # To return the top readers data
-    try:
-        studentsNum = int(input("\nHow many top readers you want: "))
-    except ValueError:
-        print("Invalid input: pages read must be an integer")
+    while True:
+        try:
+            studentsNum = int(input("\nHow many top readers you want: "))
+            break
+        except ValueError:
+            print("** Invalid input: Must be an integer **\n")
+
     top_students = get_top_readers(studentsNum)
     print(f"Top {studentsNum} readers are:")
     for i, (name, pages) in enumerate(top_students):
         print(f"{i + 1}. {name}: {pages} pages")
     input("Press Any key to continue...")
+
 
 if __name__ == "__main__":
     main()
