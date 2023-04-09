@@ -34,8 +34,8 @@ def add_student(name, pages):
 
 
 # Save the data to the user want file name
-def save_data(fileName):
-    with open(fileName, 'w', newline='') as csvfile:
+def save_data(file_name):
+    with open(file_name, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Name', 'Pages Read'])
         for name, pages in students.items():
@@ -97,7 +97,7 @@ def main():
     print(f"Top {studentsNum} readers are:")
     for i, (name, pages) in enumerate(top_students):
         print(f"{i + 1}. {name}: {pages} pages")
-
+    input("Press Any key to continue...")
 
 if __name__ == "__main__":
     main()
