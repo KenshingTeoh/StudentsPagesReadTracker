@@ -145,7 +145,7 @@ def autoSave():
         saveData(fileName)
 
 
-# Main
+# Main Function
 def main():
     global studentDict  # add this line to access the global variable
 
