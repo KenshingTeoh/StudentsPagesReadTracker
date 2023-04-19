@@ -2,106 +2,196 @@
 # And saved it in a csv file that user enter the file name so we can keep the data
 # 4/8/2023 Kenshing Teoh
 
-import csv
+# 4/18/2023 Adding new features: 30 secs auto save, and let user add new column.
+
 import os
+import csv
+import time
+import threading
 
-# global students dictionary
-students = {}
-
-
-# Load data function that load the data from user wanted file in order to keep on track of the pages read
-def load_data(fileName):
-    # file doesn't exist, so no data to load
-    if not os.path.isfile(fileName):
-        return
-    # if file exist read the data to the students dictionary in order to keep on the students that already entered later
-    with open(fileName, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            name = row['Name']
-            pages = int(row['Pages Read'])
-            students[name] = pages
+# Global variables
+fileName = ''
+studentDict = {}
+columns = []
 
 
-# Add student function that check if the student already exist in the dictionary so won't repeat the student
-def add_student(name, pages):
-    if name in students:
-        # update page count for existing student
-        students[name] += pages
+# Load the data from existing file
+def loadData(fileName):
+    global studentDict, columns
+    with open(fileName, "r") as file:
+        lines = file.readlines()
+        if len(lines) == 0:
+            return {}
+        headers = lines[0].strip().split(",")
+        columns = headers[1:]
+        studentDict = {}
+        for line in lines[1:]:
+            data = line.strip().split(",")
+            studentDict[data[0]] = {headers[i]: data[i] for i in range(1, len(headers))}
+        return studentDict
+
+
+# Add student data
+# Check if user enter 'exit' will back to main menu
+# Check if the student's name already exist if it does check every keys for missing value will ask user to enter it
+def addData():
+    global studentDict
+    while True:
+        userIn = input('Enter student name (or type "exit" to return to main menu): ')
+        if userIn == 'exit':
+            break
+
+        if not userIn:
+            print('Student name cannot be empty. Please try again.')
+            continue
+
+        if userIn in studentDict:
+            print(f"Student '{userIn}' already exists.")
+
+            # check if the student has any missing values
+            missingValues = []
+            for column in columns:
+                if not studentDict[userIn].get(column):
+                    missingValues.append(column)
+
+            if missingValues:
+                print(f"The following fields for student '{userIn}' are missing values: {', '.join(missingValues)}")
+                for column in missingValues:
+                    while True:
+                        data = input(f'Enter {column} for {userIn}: ')
+                        if not data:
+                            print(f'{column} cannot be empty. Please try again.')
+                            continue
+                        else:
+                            studentDict[userIn][column] = data
+                            break
+            else:
+                print(f"Student '{userIn}' already has all values.")
+
+        else:
+            studentDict[userIn] = {}
+            for column in columns:
+                while True:
+                    data = input(f'Enter {column} for {userIn}: ')
+                    if not data:
+                        print(f'{column} cannot be empty. Please try again.')
+                        continue
+                    else:
+                        studentDict[userIn][column] = data
+                        break
+
+
+# Add Column function
+def addColumn(fileName):
+    global columns
+
+    while True:
+        columnName = input('Enter column name: ')
+        if not columnName:
+            print('Column name cannot be empty. Please try again.')
+        else:
+            break
+
+    if os.path.getsize(fileName) == 0:
+        header = []
     else:
-        # else add the student
-        students[name] = pages
+        with open(fileName, 'r') as file:
+            reader = csv.reader(file)
+            header = next(reader, [])
+    # If the column already exist
+    if columnName in header:
+        print(f"Column '{columnName}' already exists.")
+        return
+
+    # remove 'Name' column from header before checking if column exists
+    if 'Name' in header:
+        header.remove('Name')
+
+    if columnName in header:
+        print(f"Column '{columnName}' already exists.")
+        header.insert(0, 'Name')  # add 'Name' column back to header
+        return
+
+    with open(fileName, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(header + [columnName])
+        columns = header + [columnName]
+
+    print(f"Column '{columnName}' added successfully.")
 
 
-# Save the data to the user want file name
-def save_data(file_name):
-    with open(file_name, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Name', 'Pages Read'])
-        for name, pages in students.items():
-            writer.writerow([name, pages])
+# Save Data Function
+def saveData(fileName):
+    global studentDict
+    with open(fileName, 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        # write header row
+        header = ['Name'] + columns
+        writer.writerow(header)
+        # write student data rows
+        for key, value in studentDict.items():
+            row = [key] + [value.get(column, '') for column in columns]
+            writer.writerow(row)
 
 
-# Return user wanted how many top readers
-# Extra functionality that return the top readers, but probably not that useful since is in a excel sheet
-# can easily sort the data, keep it for user need later.
-def get_top_readers(studentsNum):
-    sorted_students = sorted(students.items(), key=lambda x: x[1], reverse=True)
-    top_students = sorted_students[:studentsNum]
-    return top_students
+# Auto Save feature every 30 secs
+def autoSave():
+    global studentDict
+    # Set timer for 30 secs
+    saveInterval = 30
+    # Every 30 secs after autoSave got call
+    threading.Timer(saveInterval, autoSave).start()
+    if studentDict:
+        saveData(fileName)
 
 
-# Display welcome message and how to use the program
-def welcome_message():
-    print("\n** Thank you for using the student's pages read tracker! **")
-    print("** Need more function please contact Kenshing Teoh! **\n")
-    print("** The Program will ask you to enter the file name that you want to save or read the data from.**\n")
-    print("\n** And then students name (Please keep the student's name format consistent).**")
-    print("** For example: 'Lastname Firstname' or 'Lastname, Firstname'. As long as all the name are in the same "
-          "format style.")
-
-
+# Main
 def main():
-    welcome_message()
-    # Prompt user for CSV file name
-    fileName = input("Enter Excel file name: ")
-    # Check if the file has .csv extension
+    global studentDict  # add this line to access the global variable
+
+    fileName = input('Enter CSV file name: ')
     if not fileName.endswith('.csv'):
         fileName += '.csv'
 
-    # Load existing student data from CSV file, if it exists
-    load_data(fileName)
+    if os.path.exists(fileName):
+        studentDict = loadData(fileName)
+        if not studentDict:
+            columns = []
+        else:
+            columns = list(studentDict[next(iter(studentDict))].keys())
+            print(f"Columns found in CSV file: {', '.join(columns)}")
+    else:
+        print(f"CSV file '{fileName}' does not exist. Created new file!")
+        columns = []
+        with open(fileName, 'w') as file:
+            pass
 
-    # Loop the program
+    autoSave()
+
     while True:
-        name = input("\nEnter student name (or 'exit' to save the data): ")
-        if name.lower() == 'exit':
-            save_data(fileName)
-            print(f"Data saved to {fileName}")
-            break
-        while True:
-            pages_input = input("Enter pages read: ")
-            try:
-                pages = int(pages_input)
-                break
-            except ValueError:
-                print("** Invalid input: pages read must be an integer **\n")
-        add_student(name, pages)
+        print()
+        print('\n-----------------------')
+        print('     MENU OPTIONS')
+        print('-----------------------')
+        print('1. Enter student data')
+        print('2. Add column (No need to create the name column!!)')
+        print('3. Save and Exit\n')
 
-    # To return the top readers data
-    while True:
-        try:
-            studentsNum = int(input("\nHow many top readers you want: "))
-            break
-        except ValueError:
-            print("** Invalid input: Must be an integer **\n")
+        choice = input('Enter choice: ')
 
-    top_students = get_top_readers(studentsNum)
-    print(f"Top {studentsNum} readers are:")
-    for i, (name, pages) in enumerate(top_students):
-        print(f"{i + 1}. {name}: {pages} pages")
-    input("Press Any key to continue...")
+        if choice == '1':
+            addData()
+
+        elif choice == '2':
+            addColumn(fileName)
+
+        elif choice == '3':
+            saveData(fileName)
+            exit()
+
+        else:
+            print('Invalid choice. Please try again.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
