@@ -9,14 +9,13 @@ import csv
 import time
 import threading
 
-
 # Global variables
 fileName = ''
 studentDict = {}
 columns = []
 
 
-# Load data function if the file exist
+# Load the data from existing file
 def loadData(fileName):
     global studentDict, columns
     with open(fileName, "r") as file:
@@ -32,11 +31,13 @@ def loadData(fileName):
         return studentDict
 
 
-# Add data function for student's data
+# Add student data
+# Check if user enter 'exit' will back to main menu
+# Check if the student's name already exist if it does check every keys for missing value will ask user to enter it
 def addData():
     global studentDict
     while True:
-        userIn = input('Enter student name (or "exit" to return to the main menu): ')
+        userIn = input('Enter student name (or type "exit" to return to main menu): ')
         if userIn == 'exit':
             break
 
@@ -48,15 +49,14 @@ def addData():
             print(f"Student '{userIn}' already exists.")
 
             # check if the student has any missing values
-            missingValues = []
+            missing_values = []
             for column in columns:
                 if not studentDict[userIn].get(column):
-                    missingValues.append(column)
+                    missing_values.append(column)
 
-            if missingValues:
-                print(
-                    f"The following fields for student '{userIn}' are missing values: {', '.join(missingValues)}")
-                for column in missingValues:
+            if missing_values:
+                print(f"The following fields for student '{userIn}' are missing values: {', '.join(missing_values)}")
+                for column in missing_values:
                     while True:
                         data = input(f'Enter {column} for {userIn}: ')
                         if not data:
@@ -81,7 +81,7 @@ def addData():
                         break
 
 
-# Add Column function for adding new column
+# Add Column function
 def addColumn(fileName):
     global columns
 
@@ -120,7 +120,7 @@ def addColumn(fileName):
     print(f"Column '{columnName}' added successfully.")
 
 
-# Save data function
+# Save Data Function
 def saveData(fileName):
     global studentDict
     with open(fileName, 'w', newline='') as csv_file:
@@ -134,59 +134,21 @@ def saveData(fileName):
             writer.writerow(row)
 
 
-# Auto save feature, every 30 seconds will call the save_data function
+# Auto Save feature every 30 secs
 def autoSave():
     global studentDict
-    # Set the time for auto save is 30 seconds
+    # Set timer for 30 secs
     saveInterval = 30
-    # After it got save will count another 3o seconds for saving the data
+    # Every 30 secs after autoSave got call
     threading.Timer(saveInterval, autoSave).start()
-    saveData(fileName)
+    if studentDict:
+        saveData(fileName)
 
 
-# Displaying Menu for different functionality
-def displayMenu():
-    while True:
-        print()
-        print('-----------------------')
-        print('     MENU OPTIONS')
-        print('-----------------------')
-        print('1. Enter student data')
-        print('2. Add column')
-        print('3. Save and Exit')
-
-        userIn = input('Enter choice: ')
-
-        if userIn == '1':
-            addData()
-
-        elif userIn == '2':
-            addColumn(fileName)
-
-        elif userIn == '3':
-            saveData(fileName)
-            exit()
-
-        else:
-            print('Invalid choice. Please try again.')
-
-
-# Display welcome message and how to use the program
-def welcomeMessage():
-    print("\n** Thank you for using the student's pages read tracker! **")
-    print("** Need more function please contact Kenshing Teoh! **\n")
-    print("** The Program will ask you to enter the file name that you want to save or read the data from.**\n")
-    print("\n** And then students name (Please keep the student's name format consistent).**")
-    print("** For example: 'Lastname Firstname' or 'Lastname, Firstname'. As long as all the name are in the same "
-          "format style.")
-
-
+# Main
 def main():
-    global studentDict
+    global studentDict  # add this line to access the global variable
 
-    welcomeMessage()
-
-    # Get user input for file name
     fileName = input('Enter CSV file name: ')
     if not fileName.endswith('.csv'):
         fileName += '.csv'
@@ -206,7 +168,30 @@ def main():
             pass
 
     autoSave()
-    displayMenu()
+
+    while True:
+        print()
+        print('-----------------------')
+        print('     MENU OPTIONS')
+        print('-----------------------')
+        print('1. Enter student data')
+        print('2. Add column')
+        print('3. Save and Exit')
+
+        choice = input('Enter choice: ')
+
+        if choice == '1':
+            addData()
+
+        elif choice == '2':
+            addColumn(fileName)
+
+        elif choice == '3':
+            saveData(fileName)
+            exit()
+
+        else:
+            print('Invalid choice. Please try again.')
 
 
 if __name__ == '__main__':

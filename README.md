@@ -5,3 +5,7 @@ Need from user the excel file name they want to store the data in, and student's
 Will add the pages read if the student's name is already exist.
 
 Can change it in the csv excel file that they create and save the file.
+
+** 4/18/2023 Updated **
+- 30 Secs Auto-Save Feature
+- Able to add new column
