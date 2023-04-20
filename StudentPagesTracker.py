@@ -147,7 +147,7 @@ def autoSave():
 
 # Main Function
 def main():
-    global studentDict  # add this line to access the global variable
+    global studentDict, fileName
 
     fileName = input('Enter CSV file name: ')
     if not fileName.endswith('.csv'):
