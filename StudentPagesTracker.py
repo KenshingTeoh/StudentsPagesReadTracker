@@ -1,9 +1,9 @@
-# For School Library Program that we keep on track of the students on how many pages that they have read
-# And saved it in a csv file that user enter the file name so we can keep the data
+# For School Library Program
+
+# ** Updated History **
 # 4/8/2023 Kenshing Teoh
-
 # 4/18/2023 Adding new features: 30 secs auto save, and let user add new column.
-
+# 4/21/2023 Adding new features: Updated existing student's data based on user entered column name.
 import os
 import csv
 import time
@@ -18,8 +18,8 @@ columns = []
 # Load the data from existing file
 def loadData(fileName):
     global studentDict, columns
-    with open(fileName, "r") as file:
-        lines = file.readlines()
+    with open(fileName, "r") as csvFile:
+        lines = csvFile.readlines()
         if len(lines) == 0:
             return {}
         headers = lines[0].strip().split(",")
@@ -37,7 +37,8 @@ def loadData(fileName):
 def addData():
     global studentDict
     while True:
-        userIn = input('Enter student name (or type "exit" to return to main menu): ')
+        print("\n---------------- For Entering Student's Data ----------------")
+        userIn = input('Enter student name (or "exit" to return to main menu): ')
         if userIn == 'exit':
             break
 
@@ -55,13 +56,13 @@ def addData():
                     missingValues.append(column)
 
             if missingValues:
-                print(f"The following fields for student '{userIn}' are missing values: {', '.join(missingValues)}")
+                print(f"The following data for student '{userIn}' are missing values: {', '.join(missingValues)}")
                 for column in missingValues:
                     while True:
                         data = input(f'Enter {column} for {userIn}: ')
                         if not data:
-                            print(f'{column} cannot be empty. Please try again.')
-                            continue
+                            print(f'{column} will be empty.')
+                            break
                         else:
                             studentDict[userIn][column] = data
                             break
@@ -74,8 +75,8 @@ def addData():
                 while True:
                     data = input(f'Enter {column} for {userIn}: ')
                     if not data:
-                        print(f'{column} cannot be empty. Please try again.')
-                        continue
+                        print(f'{column} will be empty.')
+                        break
                     else:
                         studentDict[userIn][column] = data
                         break
@@ -95,8 +96,8 @@ def addColumn(fileName):
     if os.path.getsize(fileName) == 0:
         header = []
     else:
-        with open(fileName, 'r') as file:
-            reader = csv.reader(file)
+        with open(fileName, 'r') as csvFile:
+            reader = csv.reader(csvFile)
             header = next(reader, [])
     # If the column already exist
     if columnName in header:
@@ -112,19 +113,42 @@ def addColumn(fileName):
         header.insert(0, 'Name')  # add 'Name' column back to header
         return
 
-    with open(fileName, 'w', newline='') as file:
-        writer = csv.writer(file)
+    with open(fileName, 'w', newline='') as csvFile:
+        writer = csv.writer(csvFile)
         writer.writerow(header + [columnName])
         columns = header + [columnName]
 
     print(f"Column '{columnName}' added successfully.")
 
 
+# Update Column Function
+def updateColumn():
+    global studentDict, columns
+    while True:
+        print("\n---------------- For Updating Student's Data ----------------")
+        userIn = input('Enter student name (or "exit" to return to main menu): ')
+        if userIn == 'exit':
+            break
+
+        if userIn in studentDict:
+            column = input('Enter the column to update the data: ')
+            if column in columns:
+                value = input(f'Enter {column} for {userIn}: ')
+                studentDict[userIn][column] = value
+                print('Data updated successfully.')
+
+            else:
+                print('Column does not exist.')
+
+        else:
+            print('Student does not exist.')
+
+
 # Save Data Function
 def saveData(fileName):
     global studentDict
-    with open(fileName, 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
+    with open(fileName, 'w', newline='') as csvFile:
+        writer = csv.writer(csvFile)
         # write header row
         header = ['Name'] + columns
         writer.writerow(header)
@@ -132,6 +156,21 @@ def saveData(fileName):
         for key, value in studentDict.items():
             row = [key] + [value.get(column, '') for column in columns]
             writer.writerow(row)
+
+
+# Save and Quit Function
+def saveQuit(fileName):
+    global studentDict
+    with open(fileName, 'w', newline='') as csvFile:
+        writer = csv.writer(csvFile)
+        # write header row
+        header = ['Name'] + columns
+        writer.writerow(header)
+        # write student data rows
+        for key, value in studentDict.items():
+            row = [key] + [value.get(column, '') for column in columns]
+            writer.writerow(row)
+    quit()
 
 
 # Auto Save feature every 30 secs
@@ -175,7 +214,8 @@ def main():
         print('-----------------------')
         print('1. Enter student data')
         print('2. Add column (No need to create the name column!!)')
-        print('3. Save and Exit\n')
+        print('3. Update Column')
+        print('4. Save and Exit\n')
 
         choice = input('Enter choice: ')
 
@@ -186,11 +226,14 @@ def main():
             addColumn(fileName)
 
         elif choice == '3':
-            saveData(fileName)
+            updateColumn()
+
+        elif choice == '4':
+            saveQuit(fileName)
             exit()
 
         else:
-            print('Invalid choice. Please try again.')
+            print('** Invalid options. Please try again. **')
 
 
 if __name__ == '__main__':
